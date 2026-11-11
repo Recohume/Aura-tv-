@@ -1,7 +1,8 @@
+
 package com.idlix.mobile.ui.screens.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +37,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,6 +51,7 @@ import com.idlix.mobile.ui.components.HeroBannerPager
 import com.idlix.mobile.ui.components.MovieSwimlane
 import com.idlix.mobile.ui.components.SeriesSwimlane
 import com.idlix.mobile.ui.theme.BackgroundDark
+import com.idlix.mobile.ui.theme.BorderDark
 import com.idlix.mobile.ui.theme.IdlixRed
 import com.idlix.mobile.ui.theme.SurfaceDark
 import com.idlix.mobile.ui.theme.TextMuted
@@ -75,10 +78,17 @@ fun HomeScreen(
             .background(BackgroundDark)
     ) {
         if (uiState.isLoading && !uiState.isRefreshing) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator(color = IdlixRed)
             }
-        } else if (uiState.error != null && uiState.bannerMovies.isEmpty() && uiState.continueWatching.isEmpty()) {
+        } else if (
+            uiState.error != null &&
+            uiState.bannerMovies.isEmpty() &&
+            uiState.continueWatching.isEmpty()
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -92,25 +102,31 @@ fun HomeScreen(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
+
                     Spacer(modifier = Modifier.height(6.dp))
+
                     Text(
                         text = uiState.error ?: "",
                         color = TextMuted,
                         fontSize = 12.sp
                     )
+
                     Spacer(modifier = Modifier.height(16.dp))
+
                     Button(
                         onClick = { viewModel.loadData() },
-                        colors = ButtonDefaults.buttonColors(containerColor = IdlixRed)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = IdlixRed
+                        )
                     ) {
                         Icon(Icons.Filled.Refresh, contentDescription = null)
                         Spacer(modifier = Modifier.size(6.dp))
                         Text(stringResource(R.string.retry))
                     }
+
                     Spacer(modifier = Modifier.height(10.dp))
-                    OutlinedButton(
-                        onClick = onOpenOfflineDownloads
-                    ) {
+
+                    OutlinedButton(onClick = onOpenOfflineDownloads) {
                         Icon(
                             imageVector = Icons.Filled.Download,
                             contentDescription = null,
@@ -131,22 +147,63 @@ fun HomeScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
             ) {
-                // Header Bar (Logo & Settings Button)
+
+                // AURA TV - Dark Liquid Glass Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                        .border(
+                            width = 1.dp,
+                            color = BorderDark,
+                            shape = RoundedCornerShape(22.dp)
+                        )
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    Color(0xFF19171E),
+                                    Color(0xFF281117),
+                                    Color(0xFF19171E)
+                                )
+                            ),
+                            shape = RoundedCornerShape(22.dp)
+                        )
+                        .padding(
+                            start = 18.dp,
+                            end = 8.dp,
+                            top = 7.dp,
+                            bottom = 7.dp
+                        ),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.idlix_logo),
-                        contentDescription = "IDLIX Logo",
-                        modifier = Modifier.height(28.dp)
-                    )
+                    Column {
+                        Text(
+                            text = "AURA TV",
+                            color = TextWhite,
+                            fontSize = 23.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.5.sp
+                        )
 
-                    IconButton(onClick = onNavigateToSettings) {
+                        Text(
+                            text = "YOUR CINEMA. YOUR WORLD.",
+                            color = IdlixRed,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onNavigateToSettings,
+                        modifier = Modifier
+                            .background(
+                                Color.White.copy(alpha = 0.07f),
+                                RoundedCornerShape(16.dp)
+                            )
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
                             contentDescription = stringResource(R.string.settings),
@@ -158,7 +215,9 @@ fun HomeScreen(
                 if (uiState.bannerMovies.isNotEmpty()) {
                     HeroBannerPager(
                         movies = uiState.bannerMovies,
-                        onItemClick = { slug -> onNavigateToDetail("movie", slug) }
+                        onItemClick = { slug ->
+                            onNavigateToDetail("movie", slug)
+                        }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -166,15 +225,22 @@ fun HomeScreen(
                 if (uiState.continueWatching.isNotEmpty()) {
                     ContinueWatchingSection(
                         items = uiState.continueWatching,
-                        onItemClick = { item -> onContinueWatchingClick(item) }
+                        onItemClick = { item ->
+                            onContinueWatchingClick(item)
+                        }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                if (uiState.bannerMovies.isEmpty() && uiState.popularMovies.isEmpty()) {
+                if (
+                    uiState.bannerMovies.isEmpty() &&
+                    uiState.popularMovies.isEmpty()
+                ) {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = SurfaceDark.copy(alpha = 0.94f)
+                        ),
+                        shape = RoundedCornerShape(20.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -186,33 +252,58 @@ fun HomeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = uiState.error ?: stringResource(R.string.failed_load_recommendations),
+                                text = uiState.error
+                                    ?: stringResource(R.string.failed_load_recommendations),
                                 color = TextWhite,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium
                             )
+
                             Spacer(modifier = Modifier.height(10.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
                                 Button(
                                     onClick = { viewModel.loadData() },
-                                    colors = ButtonDefaults.buttonColors(containerColor = IdlixRed),
-                                    shape = RoundedCornerShape(6.dp)
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = IdlixRed
+                                    ),
+                                    shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Icon(
+                                        Icons.Filled.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text(stringResource(R.string.retry), fontSize = 12.sp)
+                                    Text(
+                                        stringResource(R.string.retry),
+                                        fontSize = 12.sp
+                                    )
                                 }
+
                                 OutlinedButton(
                                     onClick = onOpenOfflineDownloads,
-                                    shape = RoundedCornerShape(6.dp)
+                                    shape = RoundedCornerShape(10.dp)
                                 ) {
-                                    Icon(Icons.Filled.Download, contentDescription = null, tint = TextWhite, modifier = Modifier.size(16.dp))
+                                    Icon(
+                                        Icons.Filled.Download,
+                                        contentDescription = null,
+                                        tint = TextWhite,
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text(stringResource(R.string.open_offline_downloads), color = TextWhite, fontSize = 12.sp)
+                                    Text(
+                                        stringResource(R.string.open_offline_downloads),
+                                        color = TextWhite,
+                                        fontSize = 12.sp
+                                    )
                                 }
                             }
                         }
                     }
+
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
@@ -220,7 +311,9 @@ fun HomeScreen(
                     MovieSwimlane(
                         title = stringResource(R.string.trending_now),
                         movies = uiState.trending,
-                        onMovieClick = { slug -> onNavigateToDetail("movie", slug) }
+                        onMovieClick = { slug ->
+                            onNavigateToDetail("movie", slug)
+                        }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -229,7 +322,9 @@ fun HomeScreen(
                     SeriesSwimlane(
                         title = stringResource(R.string.popular_series),
                         seriesList = uiState.popularSeries,
-                        onSeriesClick = { slug -> onNavigateToDetail("series", slug) }
+                        onSeriesClick = { slug ->
+                            onNavigateToDetail("series", slug)
+                        }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -238,7 +333,9 @@ fun HomeScreen(
                     MovieSwimlane(
                         title = stringResource(R.string.popular_movies),
                         movies = uiState.popularMovies,
-                        onMovieClick = { slug -> onNavigateToDetail("movie", slug) }
+                        onMovieClick = { slug ->
+                            onNavigateToDetail("movie", slug)
+                        }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -247,7 +344,9 @@ fun HomeScreen(
                     MovieSwimlane(
                         title = stringResource(R.string.movies_action),
                         movies = uiState.actionMovies,
-                        onMovieClick = { slug -> onNavigateToDetail("movie", slug) }
+                        onMovieClick = { slug ->
+                            onNavigateToDetail("movie", slug)
+                        }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -256,7 +355,9 @@ fun HomeScreen(
                     MovieSwimlane(
                         title = stringResource(R.string.movies_comedy),
                         movies = uiState.comedyMovies,
-                        onMovieClick = { slug -> onNavigateToDetail("movie", slug) }
+                        onMovieClick = { slug ->
+                            onNavigateToDetail("movie", slug)
+                        }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
