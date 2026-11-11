@@ -9,11 +9,12 @@ permissions:
 
 jobs:
   build:
+    name: Build Android Mobile APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - name: Checkout source
+      - name: Checkout source code
         uses: actions/checkout@v4
 
       - name: Set up Java 21
@@ -25,25 +26,44 @@ jobs:
       - name: Locate Android SDK
         shell: bash
         run: |
-          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          set -e
 
-          if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: Android sdkmanager not found in $SDK_ROOT"
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+
+          if [ ! -f "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          fi
+
+          if [ -z "$SDKMANAGER" ] || [ ! -f "$SDKMANAGER" ]; then
+            echo "ERROR: Android SDK manager not found."
             exit 1
           fi
 
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
-          echo "Found sdkmanager: $SDKMANAGER"
+
+          echo "Android SDK: $SDK_ROOT"
+          echo "SDK Manager: $SDKMANAGER"
 
       - name: Accept Android SDK licenses
         shell: bash
         run: |
-          yes 2>/dev/null | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses || true
+          set +e
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses
+          results=("${PIPESTATUS[@]}")
+          set -e
 
-      - name: Install Android SDK 35
+          SDK_STATUS="${results[1]}"
+
+          if [ "$SDK_STATUS" -ne 0 ]; then
+            echo "ERROR: Android SDK license acceptance failed."
+            exit "$SDK_STATUS"
+          fi
+
+      - name: Install Android SDK packages
         shell: bash
         run: |
           "$SDKMANAGER" --sdk_root="$ANDROID_HOME" \
@@ -51,7 +71,7 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: Fix Java path
+      - name: Remove local Java path override
         shell: bash
         run: |
           if [ -f gradle.properties ]; then
@@ -59,15 +79,16 @@ jobs:
           fi
 
       - name: Enable Gradle wrapper
-        run: chmod +x gradlew
+        run: chmod +x ./gradlew
 
-      - name: Build mobile APK
+      - name: Build mobile debug APK
         run: ./gradlew --no-daemon :app-mobile:assembleDebug --stacktrace
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: IDLIX-Mobile-Debug
           path: app-mobile/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+          retention-days: 7
   
